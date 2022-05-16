@@ -22,99 +22,94 @@
 
 #include <is/sh/ros2/Factory.hpp>
 
-
-namespace eprosima {
-namespace is {
-namespace sh {
-namespace ros2 {
-
-/**
- * @class MetaPublisher
- *        Create a TopicPublisher using the StringTemplate substitution paradigm.
- */
-class MetaPublisher : public is::TopicPublisher
+namespace eprosima
 {
-public:
-
-    MetaPublisher(
-            const core::StringTemplate&& topic_template,
-            const eprosima::xtypes::DynamicType& message_type,
-            rclcpp::Node& node,
-            const rclcpp::QoS& qos_profile,
-            const YAML::Node& /*unused*/)
-        : _topic_template(std::move(topic_template))
-        , _message_type(message_type)
-        , _node(node)
-        , _qos_profile(qos_profile)
-        , logger_("is::sh::ROS2::Publisher")
+    namespace is
     {
-        // Do nothing
-    }
-
-    bool publish(
-            const eprosima::xtypes::DynamicData& message) override final
-    {
-        const std::string topic_name = _topic_template.compute_string(message);
-
-        const auto insertion = _publishers.insert(
-            std::make_pair(std::move(topic_name), nullptr));
-        const bool inserted = insertion.second;
-        TopicPublisherPtr& publisher = insertion.first->second;
-
-        if (inserted)
+        namespace sh
         {
-            publisher = Factory::instance().create_publisher(
-                _message_type, _node, topic_name, _qos_profile);
-        }
+            namespace ros2
+            {
 
-        logger_ << utils::Logger::Level::INFO
-            << "Sending message from Integration Service to ROS 2 for topic '" << topic_name
-            << "': [[ " << message << " ]]" << std::endl;
+                /**
+                 * @class MetaPublisher
+                 *        Create a TopicPublisher using the StringTemplate substitution paradigm.
+                 */
+                class MetaPublisher : public is::TopicPublisher
+                {
+                public:
+                    MetaPublisher(
+                        const core::StringTemplate &&topic_template,
+                        const eprosima::xtypes::DynamicType &message_type,
+                        rclcpp::Node &node,
+                        const rclcpp::QoS &qos_profile,
+                        const YAML::Node & /*unused*/)
+                        : _topic_template(std::move(topic_template)), _message_type(message_type), _node(node), _qos_profile(qos_profile), logger_("is::sh::ROS2::Publisher")
+                    {
+                        // Do nothing
+                    }
 
-        return publisher->publish(message);
-    }
+                    bool publish(
+                        const eprosima::xtypes::DynamicData &message) override final
+                    {
+                        const std::string topic_name = _topic_template.compute_string(message);
 
-private:
+                        const auto insertion = _publishers.insert(
+                            std::make_pair(std::move(topic_name), nullptr));
+                        const bool inserted = insertion.second;
+                        TopicPublisherPtr &publisher = insertion.first->second;
 
-    const core::StringTemplate _topic_template;
-    const eprosima::xtypes::DynamicType& _message_type;
-    rclcpp::Node& _node;
-    const rclcpp::QoS _qos_profile;
-    utils::Logger logger_;
+                        if (inserted)
+                        {
+                            publisher = Factory::instance().create_publisher(
+                                _message_type, _node, topic_name, _qos_profile);
+                        }
 
-    using TopicPublisherPtr = std::shared_ptr<TopicPublisher>;
-    using PublisherMap = std::unordered_map<std::string, TopicPublisherPtr>;
-    PublisherMap _publishers;
+                        /*logger_ << utils::Logger::Level::INFO
+                            << "Sending message from Integration Service to ROS 2 for topic '" << topic_name
+                            << "': [[ " << message << " ]]" << std::endl;*/
 
-};
+                        return publisher->publish(message);
+                    }
 
-namespace {
-//==============================================================================
-std::string make_detail_string(
-        const std::string& topic_name,
-        const std::string& message_type)
-{
-    return
-        "[Middleware: ROS2, topic template: "
-        + topic_name + ", message type: " + message_type + "]";
-}
+                private:
+                    const core::StringTemplate _topic_template;
+                    const eprosima::xtypes::DynamicType &_message_type;
+                    rclcpp::Node &_node;
+                    const rclcpp::QoS _qos_profile;
+                    utils::Logger logger_;
 
-} // anonymous namespace
+                    using TopicPublisherPtr = std::shared_ptr<TopicPublisher>;
+                    using PublisherMap = std::unordered_map<std::string, TopicPublisherPtr>;
+                    PublisherMap _publishers;
+                };
 
-//==============================================================================
-std::shared_ptr<is::TopicPublisher> make_meta_publisher(
-        const eprosima::xtypes::DynamicType& message_type,
-        rclcpp::Node& node,
-        const std::string& topic_name,
-        const rclcpp::QoS& qos_profile,
-        const YAML::Node& configuration)
-{
-    return std::make_shared<MetaPublisher>(
-        core::StringTemplate(topic_name, make_detail_string(topic_name, message_type.name())),
-        message_type, node, qos_profile, configuration);
-}
+                namespace
+                {
+                    //==============================================================================
+                    std::string make_detail_string(
+                        const std::string &topic_name,
+                        const std::string &message_type)
+                    {
+                        return "[Middleware: ROS2, topic template: " + topic_name + ", message type: " + message_type + "]";
+                    }
 
-} //  namespace ros2
-} //  namespace sh
-} //  namespace is
+                } // anonymous namespace
+
+                //==============================================================================
+                std::shared_ptr<is::TopicPublisher> make_meta_publisher(
+                    const eprosima::xtypes::DynamicType &message_type,
+                    rclcpp::Node &node,
+                    const std::string &topic_name,
+                    const rclcpp::QoS &qos_profile,
+                    const YAML::Node &configuration)
+                {
+                    return std::make_shared<MetaPublisher>(
+                        core::StringTemplate(topic_name, make_detail_string(topic_name, message_type.name())),
+                        message_type, node, qos_profile, configuration);
+                }
+
+            } //  namespace ros2
+        }     //  namespace sh
+    }         //  namespace is
 } //  namespace eprosima
